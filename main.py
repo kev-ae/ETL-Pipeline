@@ -7,7 +7,8 @@ from datetime import datetime
 import datetime
 import sqlite3
 
-DATABASE_LOCATION = "sqlite:///new_releases.sqlite"
+DATABASE_LOCATION = 'sqlite:///new_releases.sqlite'
+DATA_FILE = '/home/kev/Coding/py/web_scraping/bs4/Reviews/db/data.json' # location of data
 
 def validation_check(df: pd.DataFrame) -> bool:
     # check for empty dataframe
@@ -30,7 +31,7 @@ def validation_check(df: pd.DataFrame) -> bool:
 
 if __name__ == "__main__":
     # extract
-    with open('/home/kev/Coding/py/web_scraping/bs4/Reviews/db/data.json', 'r') as file:
+    with open(DATA_FILE, 'r') as file:
         data = json.load(file)
 
     today = datetime.date.today()
