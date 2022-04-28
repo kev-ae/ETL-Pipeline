@@ -1,4 +1,5 @@
 from os import times
+import re
 import pandas as pd
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
@@ -38,6 +39,7 @@ if __name__ == "__main__":
 
     game_id = []
     game_title = []
+    prices = []
     score = []
     tags = []
     timestamp = []
@@ -45,11 +47,18 @@ if __name__ == "__main__":
     for game in data['games']:
         game_id.append(game['game_id'])
         game_title.append(game['game_title'])
-        try:
-            # If games have low reviews, it will show up as 'num user reviews'. Get rid by replacing with None
-            opinion = int(game['overall_score'][0]) if game['overall_score'] != None else None
+        if 'price' in game:
+            prices.append(game['price'])
+        elif 'discount_original_price' in game:
+            prices.append(game['discount_original_price'])
+        else:
+            prices.append(None)
+
+        # If games have low reviews, it will show up as 'num user reviews'. Get rid by replacing with None
+        first_char = game['overall_score'][0] if game['overall_score'] != None else None
+        if first_char != None and re.search('[0-9]', first_char):
             opinion = None
-        except:
+        else:
             opinion = game['overall_score']
         score.append(opinion)
         tags.append(', '.join(game['tags']))
@@ -58,12 +67,13 @@ if __name__ == "__main__":
     new_releases_dict = {
         'game_id' : game_id,
         'game_title' : game_title,
+        'price' : prices,
         'score' : score,
         'tags' : tags,
         'timestamp' : timestamp
     }
 
-    game_df = pd.DataFrame(new_releases_dict, columns=['game_id', 'game_title', 'score', 'tags', 'timestamp'])
+    game_df = pd.DataFrame(new_releases_dict, columns=['game_id', 'game_title', 'price', 'score', 'tags', 'timestamp'])
 
     # validate
     if validation_check(game_df):
@@ -76,8 +86,9 @@ if __name__ == "__main__":
 
     sql_query = '''
     CREATE TABLE IF NOT EXISTS new_releases(
-        game_id INT(255),
+        game_id VARCHAR(200),
         game_title VARCHAR(200),
+        price VARCHAR(200),
         score VARCHAR(200),
         tags VARCHAR(1000),
         timestamp VARCHAR(200),
