@@ -1,4 +1,4 @@
-from os import times
+import os
 import re
 import pandas as pd
 import sqlalchemy
@@ -7,9 +7,6 @@ import json
 from datetime import datetime
 import datetime
 import sqlite3
-
-DATABASE_LOCATION = 'sqlite:///new_releases.sqlite'
-DATA_FILE = '/home/kev/Coding/py/web_scraping/bs4/Reviews/db/data.json' # location of data
 
 def validation_check(df: pd.DataFrame) -> bool:
     # check for empty dataframe
@@ -30,9 +27,12 @@ def validation_check(df: pd.DataFrame) -> bool:
 
     
 
-if __name__ == "__main__":
+def run_etl():
+    database_location = 'sqlite:///new_releases.sqlite'
+    data_file = os.environ['DB_LOC'] # location of database directory
+
     # extract
-    with open(DATA_FILE, 'r') as file:
+    with open(data_file + '/data.json', 'r') as file:
         data = json.load(file)
 
     today = datetime.date.today()
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         print('Data is valid, proceeding to load stage')
 
     # load
-    engine = sqlalchemy.create_engine(DATABASE_LOCATION)
+    engine = sqlalchemy.create_engine(database_location)
     conn = sqlite3.connect('new_releases.sqlite')
     cursor = conn.cursor()
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         score VARCHAR(200),
         tags VARCHAR(1000),
         timestamp VARCHAR(200),
-        CONSTRAINT primary_key_constraint PRIMARY KEY (game_id)
+        CONSTRAINT primary_key_constraint PRIMARY KEY (game_id, timestamp)
     );
     '''
     cursor.execute(sql_query)
@@ -101,9 +101,10 @@ if __name__ == "__main__":
     try:
         game_df.to_sql('new_releases', engine, index=False, if_exists='append')
     except:
-        print('Data already exist in the database')
+        print('Error with inserting into the database')
 
     conn.close()
     print('Connection close')
 
-    # job scheduling
+if __name__ == '__main__':
+    run_etl()
